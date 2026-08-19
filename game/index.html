@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>池上慢速公路</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell">
+    <section class="game-stage" aria-label="池上伯朗大道駕駛遊戲">
+      <canvas id="gameCanvas"></canvas>
+      <div class="topbar"><div class="brand"><span class="brand-mark">稻</span><div><strong>池上慢速公路</strong><small>伯朗大道 · 天堂路</small></div></div><div class="top-actions"><button class="icon-btn" id="soundBtn" title="切換音效">♫</button><button class="icon-btn" id="pauseBtn" title="暫停遊戲">Ⅱ</button></div></div>
+      <div class="hud" id="gameHud"><div class="hud-card score-card"><span>目前分數</span><strong id="score">0000</strong><em id="combo">安全駕駛中</em></div><div class="hud-card progress-card"><div class="hud-label"><span>路程進度</span><b id="distanceLabel">0%</b></div><div class="progress-track"><i id="distanceBar"></i></div><div class="route-label"><span>伯朗大道</span><span>相框</span><span>金城武樹</span><span>天堂路</span></div></div><div class="hud-card stat-card"><div><span>剩餘時間</span><strong id="time">03:20</strong></div><div><span>電池</span><strong id="hp">100<small>%</small></strong></div></div><div class="hud-card drive-card"><div><span>時速</span><strong id="speed">0<small> km/h</small></strong></div><div class="mud-meter"><span>泥巴度</span><i><b id="mudBar"></b></i></div></div></div>
+      <div class="toast" id="toast" role="status"></div><div class="score-pop" id="scorePop"></div><div class="camera-badge" id="cameraBadge">追蹤視角 · C 切換</div><div class="mud-overlay" id="mudOverlay"></div><div class="first-person-overlay" id="firstPersonOverlay"></div><div class="event-strip" id="eventStrip"><span class="event-dot"></span><span id="eventText">沿著稻浪前進，記得禮讓行人與單車</span></div><div class="controls-hint" id="controlsHint"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span><span>駕駛</span><span class="key photo">E</span><span>互動</span><span class="key camera">C</span><span>視角</span><span class="key escape">Esc</span><span>離開遊戲</span></div>
+      <div class="screen-layer active" id="mainMenu"><div class="menu-art"><div class="sun-disc"></div><div class="floating-car">▰</div></div><div class="menu-copy"><div class="eyebrow">TAITUNG · CHISHANG</div><h1>池上<br><i>慢速公路</i></h1><p>把速度放慢一點，讓稻浪替你記住這趟旅程。</p><div class="menu-buttons"><button class="primary-btn" id="startBtn">開始遊戲 <span>→</span></button><button class="ghost-btn" id="tutorialBtn">駕駛須知</button><button class="ghost-btn" id="garageBtn">選擇載具</button><button class="ghost-btn" id="leaderboardBtn">池上榮譽榜</button><button class="ghost-btn" id="settingsBtn">系統設定</button></div></div></div>
+      <div class="screen-layer" id="tutorialScreen"><div class="panel wide-panel"><div class="eyebrow">HOW TO PLAY <span id="tutorialCount">01 / 03</span></div><h2 id="tutorialTitle">操作與控制</h2><div class="tutorial-card" id="tutorialCard"></div><div class="panel-actions"><button class="ghost-btn" id="tutorialBack">返回</button><button class="primary-btn" id="tutorialNext">下一頁 <span>→</span></button></div></div></div>
+      <div class="screen-layer" id="garageScreen"><div class="panel garage-panel"><div class="eyebrow">GARAGE · 選擇你的節奏</div><h2>挑一台適合池上的車</h2><div class="vehicle-grid" id="vehicleGrid"></div><div class="panel-actions"><button class="ghost-btn" id="garageBack">返回</button><button class="primary-btn" id="garageStart">駕駛這台 <span>→</span></button></div></div></div>
+      <div class="screen-layer" id="leaderboardScreen"><div class="panel small-panel"><div class="eyebrow">CHISHANG HONOR ROLL</div><h2>池上榮譽榜</h2><div class="leader-list"><div><b>01</b><span>稻浪旅人</span><strong>8,420</strong></div><div><b>02</b><span>金城武的風</span><strong>7,180</strong></div><div><b>03</b><span>阿嬤奉茶</span><strong>6,540</strong></div><div class="current"><b>YOU</b><span>準備出發</span><strong>---</strong></div></div><button class="ghost-btn" data-menu="mainMenu">返回主畫面</button></div></div>
+      <div class="screen-layer" id="settingsScreen"><div class="panel small-panel"><div class="eyebrow">SETTINGS</div><h2>系統設定</h2><label class="setting-row"><span>音效</span><input id="soundToggle" type="checkbox" checked><b></b></label><label class="setting-row"><span>畫面震動</span><input id="shakeToggle" type="checkbox" checked><b></b></label><label class="setting-row"><span>觸控操作</span><input id="touchToggle" type="checkbox" checked><b></b></label><button class="ghost-btn" data-menu="mainMenu">返回主畫面</button></div></div>
+      <div class="pause-screen hidden" id="pauseScreen"><div class="pause-panel"><span class="eyebrow">PAUSED</span><h2>先看看稻浪</h2><p>準備好了就繼續上路。</p><button class="primary-btn" id="resumeBtn">繼續駕駛 <span>→</span></button></div></div>
+      <div class="result-screen hidden" id="resultScreen"><div clas  s="result-panel"><span class="eyebrow" id="resultEyebrow">ARRIVAL</span><h2 id="resultTitle">抵達天堂路終點</h2><div class="rank" id="rank">A</div><p id="resultMessage">這趟路，開得很有池上的節奏。</p><div class="result-stats"><div><span>總分</span><strong id="finalScore">0</strong></div><div><span>完美閃避</span><strong id="finalNearMiss">0</strong></div><div><span>打卡完成</span><strong id="finalPhotos">0/2</strong></div><div><span>事故扣分</span><strong id="finalPenalties">0</strong></div></div><button class="primary-btn" id="restartBtn">再走一趟 <span>↻</span></button><button class="ghost-btn" id="resultMenu">返回主畫面</button></div></div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

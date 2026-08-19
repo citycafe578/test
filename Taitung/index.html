@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台東熱門農產品行情看板</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-12">
+
+    <!-- 頂部標題區 -->
+    <header class="text-center pt-8 pb-6 px-4 text-white">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <span class="text-3xl">🍃</span>
+            <h1 class="text-2xl md:text-3xl font-bold tracking-wider">台東熱門農產品行情看板</h1>
+        </div>
+        <p class="text-sm text-indigo-100 opacity-90 mb-3">本週行情走勢與零售價預估 (數據自動更新中)</p>
+        <div class="inline-flex items-center gap-2 bg-indigo-900/40 border border-indigo-400/30 px-3 py-1 rounded-full text-xs text-indigo-200">
+            <span>🕒</span>
+            <span id="update-time">最後更新時間：2026-08-19 10:07:31</span>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 space-y-6">
+        
+        <!-- 產品選擇選單 -->
+        <section class="bg-white/95 backdrop-blur shadow-xl rounded-2xl p-6">
+            <div class="flex items-center gap-2 mb-4 text-sm font-semibold text-slate-700">
+                <span>👆</span>
+                <span>請選擇農產品：</span>
+            </div>
+            <div id="fruit-buttons" class="flex flex-wrap gap-3">
+                <!-- 按鈕將由 JS 動態生成 -->
+            </div>
+        </section>
+
+        <!-- 圖表一：批發價 vs 估算零售價 -->
+        <section class="bg-white/95 backdrop-blur shadow-xl rounded-2xl p-6">
+            <div class="flex items-center gap-2 mb-4 text-indigo-900 font-bold border-b pb-3">
+                <span class="text-xl">📊</span>
+                <h2 class="text-lg">批發價 vs 估算零售價</h2>
+            </div>
+            <div class="relative h-72 md:h-80 w-full">
+                <canvas id="barChart"></canvas>
+            </div>
+        </section>
+
+        <!-- 圖表二：本週價格起伏走勢 -->
+        <section class="bg-white/95 backdrop-blur shadow-xl rounded-2xl p-6">
+            <div class="flex items-center gap-2 mb-4 text-indigo-900 font-bold border-b pb-3">
+                <span class="text-xl">📈</span>
+                <h2 class="text-lg">本週價格起伏走勢</h2>
+            </div>
+            <div class="relative h-72 md:h-80 w-full">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // 五種水果的模擬資料
+        const fruitData = {
+            "釋迦": {
+                dates: ["8/15 (六)", "8/16 (日)", "8/17 (一)", "8/18 (二)"],
+                wholesale: [95.0, 92.5, 94.0, 90.0],
+                retail: [142.5, 138.8, 141.0, 135.0]
+            },
+            "香蕉": {
+                dates: ["8/15 (六)", "8/16 (日)", "8/17 (一)", "8/18 (二)"],
+                wholesale: [35.0, 34.5, 36.0, 35.2],
+                retail: [52.5, 51.8, 54.0, 52.8]
+            },
+            "木瓜": {
+                dates: ["8/15 (六)", "8/16 (日)", "8/17 (一)", "8/18 (二)"],
+                wholesale: [48.0, 47.5, 49.0, 46.5],
+                retail: [72.0, 71.3, 73.5, 69.8]
+            },
+            "百香果": {
+                dates: ["8/15 (六)", "8/16 (日)", "8/17 (一)", "8/18 (二)"],
+                wholesale: [84.0, 83.4, 83.4, 78.7],
+                retail: [126.0, 125.1, 125.1, 118.0]
+            },
+            "鳳梨": {
+                dates: ["8/15 (六)", "8/16 (日)", "8/17 (一)", "8/18 (二)"],
+                wholesale: [42.0, 43.0, 41.5, 40.0],
+                retail: [63.0, 64.5, 62.2, 60.0]
+            }
+        };
+
+        let currentFruit = "百香果"; // 預設選中百香果
+        let barChartInstance = null;
+        let lineChartInstance = null;
+
+        // 初始化選擇按鈕
+        function initButtons() {
+            const container = document.getElementById("fruit-buttons");
+            container.innerHTML = "";
+            
+            Object.keys(fruitData).forEach(fruit => {
+                const btn = document.createElement("button");
+                const isActive = fruit === currentFruit;
+                
+                btn.className = `px-5 py-2 rounded-full text-sm font-medium transition-all shadow-sm ${
+                    isActive 
+                        ? "bg-indigo-600 text-white shadow-indigo-200 shadow-md ring-2 ring-indigo-400" 
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`;
+                btn.innerText = fruit;
+                btn.onclick = () => {
+                    currentFruit = fruit;
+                    initButtons();
+                    updateCharts();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // 初始化或更新圖表
+        function updateCharts() {
+            const data = fruitData[currentFruit];
+
+            // 1. 霸條圖：批發價 vs 估算零售價
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.dates,
+                    datasets: [
+                        {
+                            label: '批發價',
+                            data: data.wholesale,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '估算零售價 (1.5x)',
+                            data: data.retail,
+                            backgroundColor: '#fb923c',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `【${currentFruit}】 近期批發價 vs 估算零售價 (${data.dates[0]} ~ ${data.dates[data.dates.length - 1]})`,
+                            font: { size: 14, weight: 'bold' }
+                        },
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. 折線圖：本週價格起伏走勢
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            if (lineChartInstance) lineChartInstance.destroy();
+
+            lineChartInstance = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: '批發價走勢',
+                        data: data.wholesale,
+                        borderColor: '#6366f1',
+                        backgroundColor: '#6366f1',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `【${currentFruit}】 近期每日價格走勢圖 (${data.dates[0]} ~ ${data.dates[data.dates.length - 1]})`,
+                            font: { size: 14, weight: 'bold' }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 頁面載入完成後執行
+        window.onload = () => {
+            initButtons();
+            updateCharts();
+        };
+    </script>
+</body>
+</html>
